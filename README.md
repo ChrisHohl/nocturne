@@ -6,7 +6,7 @@ Nocturne uses Firebase Authentication to require sign-in before showing task con
 
 Firebase project: `nocturne-e4a34`. The registered web app configuration is in `auth-config.js`. These are public client identifiers; do not publish service-account or provider private keys.
 
-Google sign-in and the `chrishohl.github.io` authorized domain are configured in `firebase.json`. Deploy authentication configuration with `npx -y firebase-tools@latest deploy --only auth --project nocturne-e4a34`. GitHub Pages publishes app files from the root of `main`.
+Google sign-in is configured in `firebase.json`. Deploy authentication configuration with `npx -y firebase-tools@latest deploy --only auth --project nocturne-e4a34 --config firebase.json`. The domain `chrishohl.github.io` is also configured in Firebase Authentication's Authorized domains settings; this is a backend setting, not a supported `firebase.json` field. GitHub Pages publishes app files from the root of `main`.
 
 ## Storage and security scope
 

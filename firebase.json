@@ -1,10 +1,10 @@
 {
   "auth": {
-    "authorizedDomains": ["chrishohl.github.io", "nocturne-e4a34.firebaseapp.com", "nocturne-e4a34.web.app"],
     "providers": {
       "googleSignIn": {
         "oAuthBrandDisplayName": "Nocturne",
-        "supportEmail": "chrisjhohl@gmail.com"
+        "supportEmail": "chrisjhohl@gmail.com",
+        "authorizedRedirectUris": ["https://nocturne-e4a34.firebaseapp.com/__/auth/handler"]
       }
     }
   }
