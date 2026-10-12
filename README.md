@@ -2,15 +2,11 @@
 
 Nocturne uses Firebase Authentication to require sign-in before showing task controls. Google is the first enabled provider; Apple and phone flows are implemented but hidden until configured.
 
-## Activation
+## Configuration
 
-1. Create a Firebase project on the free Spark plan and register a web app.
-2. Enable Google under Authentication → Sign-in method, with a project support email.
-3. Add `chrishohl.github.io` to Authentication → Settings → Authorized domains.
-4. Replace `firebaseConfig = null` in `auth-config.js` with the public web app configuration from Firebase. Do not publish private credentials.
-5. Publish these files together to `main`. GitHub Pages serves the root directory.
+Firebase project: `nocturne-e4a34`. The registered web app configuration is in `auth-config.js`. These are public client identifiers; do not publish service-account or provider private keys.
 
-This branch intentionally leaves the Firebase config unset until provisioning succeeds. Do not merge it as a working sign-in release before configuring and testing Google sign-in.
+Google sign-in and the `chrishohl.github.io` authorized domain are configured in `firebase.json`. Deploy authentication configuration with `npx -y firebase-tools@latest deploy --only auth --project nocturne-e4a34`. GitHub Pages publishes app files from the root of `main`.
 
 ## Storage and security scope
 
