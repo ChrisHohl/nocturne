@@ -2,7 +2,7 @@ import { firebaseConfig, enabledProviders } from './auth-config.js';
 import { startTasks } from './tasks.js';
 
 const $ = id => document.getElementById(id);
-let auth, sdk, disposeTasks, verifier, confirmation, busy = false;
+let auth, sdk, db, firestoreSdk, disposeTasks, verifier, confirmation, busy = false;
 const status = message => { $('auth-status').textContent = message; };
 function setBusy(value) {
   busy = value;
@@ -89,11 +89,14 @@ async function initialize() {
     status('Sign-in is being set up. Please check back soon.'); return;
   }
   try {
-    const [appSdk, authSdk] = await Promise.all([
+    const [appSdk, authSdk, cloudSdk] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js')
+      import('https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js'),
+      import('https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js')
     ]);
-    sdk = authSdk; auth = sdk.getAuth(appSdk.initializeApp(firebaseConfig));
+    const app=appSdk.initializeApp(firebaseConfig);
+    sdk = authSdk; auth = sdk.getAuth(app);
+    firestoreSdk=cloudSdk; db=firestoreSdk.getFirestore(app);
     auth.useDeviceLanguage();
     await sdk.setPersistence(auth, sdk.browserLocalPersistence);
     $('google-sign-in').hidden = !enabledProviders.google;
@@ -107,7 +110,7 @@ async function initialize() {
       $('tagline').hidden = false;
       resetPhone();
       if (user && !user.isAnonymous) {
-        disposeTasks = startTasks(user);
+        disposeTasks = startTasks(user, {db, sdk:firestoreSdk});
         $('account-name').textContent = user.displayName || user.email || user.phoneNumber || 'Your account';
         $('auth-screen').hidden = true; $('tagline').hidden = true;
         $('task-app').hidden = false; $('account').hidden = false;

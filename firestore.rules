@@ -1,0 +1,29 @@
+rules_version = '2';
+// Data model: users/{uid}/tasks/{id}: text (1..240), category (Personal/Work),
+// done (bool), createdAt (immutable timestamp), updatedAt (server timestamp).
+// Parent user documents are not used. Ownership is defined by the uid path.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function isOwner(uid) { return isAuthenticated() && request.auth.uid == uid; }
+    function isValidTask(data) {
+      return data.keys().hasAll(['text','category','done','createdAt','updatedAt'])
+        && data.keys().hasOnly(['text','category','done','createdAt','updatedAt'])
+        && data.text is string && data.text.size() > 0 && data.text.size() <= 240
+        && data.category in ['Personal','Work'] && data.done is bool
+        && data.createdAt is timestamp && data.updatedAt is timestamp
+        && data.updatedAt == request.time;
+    }
+    match /users/{uid}/tasks/{taskId} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && taskId.size() <= 128
+        && isValidTask(request.resource.data) && request.resource.data.createdAt == request.time;
+      allow update: if isOwner(uid) && isValidTask(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isOwner(uid);
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

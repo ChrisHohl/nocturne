@@ -10,9 +10,13 @@ Google sign-in is configured in `firebase.json`. Deploy authentication configura
 
 ## Storage and security scope
 
-Task data remains in browser local storage, separated by Firebase user ID. Signing out hides the app and clears the in-memory task list. Existing unsigned tasks at `nocturne-todos-v1` are preserved and are not silently assigned to an account.
+Tasks are stored in Cloud Firestore at `users/{uid}/tasks/{taskId}`. Signing in with the same Google account on another device loads the same list. Realtime listeners keep additions, completion changes, and deletions synchronized. Each task is a separate document, so changes on another device do not replace an entire task list.
 
-This is real identity verification with an application UI gate. GitHub Pages still serves public static files, and local storage is not encrypted or protected from someone controlling the same browser. If tasks later move to a cloud database, enforce per-user access in database security rules before deploying it; hiding the UI alone cannot secure a backend.
+Firestore Security Rules allow only the authenticated owner to read or write their task path, reject anonymous access, validate text/type/category/field limits, and protect creation timestamps. The database uses Standard edition in `us-central1`. Deploy its rules/indexes before publishing app changes with `npx -y firebase-tools@latest deploy --only firestore --project nocturne-e4a34 --config firebase.json`.
+
+Saved tasks from the previous browser-local versions can be imported with the in-app import button after signing in. Import uses deterministic IDs and transactions to skip existing cloud documents. It preserves original local data and does not silently assign unsigned tasks to an account. Import markers hide already-imported local lists.
+
+The web client uses memory caching. If connectivity drops after loading, writes may wait until reconnection; keep the tab open until the status says "Synced to your account." Pending writes are not guaranteed to survive closing the tab. Signing out unsubscribes listeners and clears the rendered task list.
 
 ## Optional providers
 
@@ -22,4 +26,6 @@ Phone: enable Firebase phone authentication, configure SMS billing/regions and a
 
 ## Verification
 
-Checks cover JavaScript syntax, account storage isolation, sign-out cleanup, stale submission rejection, preservation of unsigned task data, and refusal to show task controls when Firebase configuration is missing. Live Google sign-in requires a configured Firebase project and an interactive provider test.
+Emulator tests cover two-device realtime add/complete/delete, simultaneous additions, idempotent import, account isolation, anonymous/unauthenticated denial, and schema/timestamp validation. UI lifecycle checks cover loading, rejected-write recovery, import, and sign-out cleanup. Production rules are compiled before deployment. These tests do not replace review before broader public use.
+
+Run validation with `npm install`, `npm run test:ui`, and `npm test`. The cloud integration tests use a demo project in the local Firestore emulator and never write to production. Java 21 or newer is required for the emulator.

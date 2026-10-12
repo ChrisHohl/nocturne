@@ -4,8 +4,16 @@
       "googleSignIn": {
         "oAuthBrandDisplayName": "Nocturne",
         "supportEmail": "chrisjhohl@gmail.com",
-        "authorizedRedirectUris": ["https://nocturne-e4a34.firebaseapp.com/__/auth/handler"]
+        "authorizedRedirectUris": [
+          "https://nocturne-e4a34.firebaseapp.com/__/auth/handler"
+        ]
       }
     }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "us-central1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
   }
 }
