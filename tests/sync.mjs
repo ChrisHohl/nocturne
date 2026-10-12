@@ -3,8 +3,12 @@ import assert from 'node:assert/strict';
 import {initializeTestEnvironment,assertFails} from '@firebase/rules-unit-testing';
 import * as sdk from 'firebase/firestore';
 sdk.setLogLevel('silent');
-const source=fs.readFileSync(new URL('../task-store.js',import.meta.url),'utf8');
-const {createTaskStore}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const source=fs.readFileSync(new URL('../src/Nocturne.Client/wwwroot/js/firebase-bridge.js',import.meta.url),'utf8');
+const {createTaskTransport}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const createTaskStore=(db,sdk,uid)=>{
+  const transport=createTaskTransport(db,sdk);
+  return {listen:(next,error)=>transport.listen(uid,next,error),add:item=>transport.add(uid,{...item,done:false}),toggle:(id,done)=>transport.toggle(uid,id,done),remove:id=>transport.remove(uid,id),clear:ids=>transport.deleteBatch(uid,ids),importTasks:items=>transport.importBatch(uid,items)};
+};
 const env=await initializeTestEnvironment({projectId:'demo-nocturne',firestore:{host:'127.0.0.1',port:8087,rules:fs.readFileSync(new URL('../firestore.rules',import.meta.url),'utf8')}});
 const claims={firebase:{sign_in_provider:'google.com'}};
 const a1=env.authenticatedContext('alice',claims).firestore();

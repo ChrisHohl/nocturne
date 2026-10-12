@@ -1,12 +1,24 @@
 # Nocturne
 
-Nocturne uses Firebase Authentication to require sign-in before showing task controls. Google is the first enabled provider; Apple and phone flows are implemented but hidden until configured.
+Nocturne is a .NET 10 Blazor WebAssembly app. C# and Razor handle the interface, task state, filtering, validation, progress, account separation, and local-task import. The small JavaScript bridge in `src/Nocturne.Client/wwwroot/js/firebase-bridge.js` is limited to Firebase's browser SDK and browser storage. Google sign-in and realtime task sync retain the existing Firebase project and data format.
+
+## Build and publish
+
+Install the .NET 10 SDK, then run:
+
+```text
+dotnet run --project tests/Nocturne.Core.Tests/Nocturne.Core.Tests.csproj
+dotnet run --project src/Nocturne.Client/Nocturne.Client.csproj
+dotnet publish src/Nocturne.Client/Nocturne.Client.csproj -c Release -o artifacts/site
+```
+
+GitHub Pages uses the GitHub Actions source. `.github/workflows/pages.yml` tests the C# core, builds the app, sets the `/nocturne/` base path, and publishes `artifacts/site/wwwroot`. C# source remains in the repository; the browser runs compiled .NET WebAssembly. The initial download is larger than the former plain JavaScript app.
 
 ## Configuration
 
-Firebase project: `nocturne-e4a34`. The registered web app configuration is in `auth-config.js`. These are public client identifiers; do not publish service-account or provider private keys.
+Firebase project: `nocturne-e4a34`. Public web app identifiers are in `src/Nocturne.Client/wwwroot/appsettings.json`. Do not publish service-account or provider private keys.
 
-Google sign-in is configured in `firebase.json`. Deploy authentication configuration with `npx -y firebase-tools@latest deploy --only auth --project nocturne-e4a34 --config firebase.json`. The domain `chrishohl.github.io` is also configured in Firebase Authentication's Authorized domains settings; this is a backend setting, not a supported `firebase.json` field. GitHub Pages publishes app files from the root of `main`.
+Google sign-in is configured in `firebase.json`. Deploy authentication configuration with `npx -y firebase-tools@latest deploy --only auth --project nocturne-e4a34 --config firebase.json`. The domain `chrishohl.github.io` remains configured in Firebase Authentication's Authorized domains settings.
 
 ## Storage and security scope
 
@@ -20,9 +32,9 @@ The web client uses memory caching. If connectivity drops after loading, writes 
 
 ## Optional providers
 
-Apple: configure an Apple Services ID, signing key, Team ID, and Firebase callback URL in the provider consoles. Keep Apple private keys out of this repository. Set `enabledProviders.apple = true` only after setup.
+Apple: configure an Apple Services ID, signing key, Team ID, and Firebase callback URL in the provider consoles. Keep Apple private keys out of this repository. Set `Providers:Apple` to true in `appsettings.json` only after setup.
 
-Phone: enable Firebase phone authentication, configure SMS billing/regions and abuse limits, then set `enabledProviders.phone = true`. The client verifies a code through Firebase and requires reCAPTCHA; it does not use a local fake code. Phone numbers are sent to Google for abuse prevention, disclosed before sending a code.
+Phone: enable Firebase phone authentication, configure SMS billing/regions and abuse limits, then set `Providers:Phone` to true. The client verifies a code through Firebase and requires reCAPTCHA. Phone numbers are sent to Google for abuse prevention, disclosed before sending a code.
 
 ## Verification
 

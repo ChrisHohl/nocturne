@@ -1,4 +1,8 @@
 node_modules/
+work/
+**/bin/
+**/obj/
+artifacts/
 .firebase/
 *-debug.log
 firebase-debug.log*

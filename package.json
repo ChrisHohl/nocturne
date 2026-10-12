@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "npx -y firebase-tools@latest emulators:exec --only firestore --project demo-nocturne --config firebase.emulator.json \"node tests/sync.mjs\"",
-    "test:ui": "node tests/view-test.cjs"
+    "test:ui": "dotnet run --project tests/Nocturne.Core.Tests/Nocturne.Core.Tests.csproj"
   },
   "devDependencies": {
     "firebase": "13.0.0",

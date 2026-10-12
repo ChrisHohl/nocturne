@@ -1,0 +1,38 @@
+name: Build and publish Nocturne
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run C# tests
+        run: dotnet run --project tests/Nocturne.Core.Tests/Nocturne.Core.Tests.csproj --configuration Release
+      - name: Publish browser application
+        run: dotnet publish src/Nocturne.Client/Nocturne.Client.csproj --configuration Release --output artifacts/site
+      - name: Set GitHub Pages base path
+        run: |
+          sed -i 's|<base href="/" />|<base href="/nocturne/" />|' artifacts/site/wwwroot/index.html
+          touch artifacts/site/wwwroot/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/site/wwwroot
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

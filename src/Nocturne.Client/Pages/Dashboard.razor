@@ -1,0 +1,148 @@
+@using System.Text.RegularExpressions
+@using Nocturne.Core
+@using Nocturne.Client.Services
+@inject FirebaseClient Firebase
+@inject TaskSession Session
+@implements IAsyncDisposable
+
+<div class="shell">
+  <header>
+    <div class="brand"><span class="mark">↗</span>nocturne<span style="color:#636963;font-weight:400;margin-left:8px">/ todo</span></div>
+    @if (Session.User is null) { <span class="tag">LESS NOISE. MORE FOCUS.</span> }
+    else { <div id="account"><span id="account-name">@Session.User.DisplayName</span><button class="clear" disabled="@authBusy" @onclick="SignOut">Sign out</button></div> }
+  </header>
+  @if (Session.User is null)
+  {
+    <section class="auth-panel" aria-labelledby="auth-title">
+      <div class="eyebrow">YOUR SPACE TO FOCUS</div><h1 id="auth-title">A little clarity.<br/>Just for you.</h1>
+      <p class="sub">Sign in to start your day with Nocturne.</p>
+      <div class="auth-options">
+        <button disabled="@(!initialized || authBusy)" @onclick='() => SignIn("google")'>Continue with Google</button>
+        @if (Firebase.AppleEnabled) { <button disabled="@(!initialized || authBusy)" @onclick='() => SignIn("apple")'>Continue with Apple</button> }
+        @if (Firebase.PhoneEnabled) { <button disabled="@(!initialized || authBusy)" @onclick="OpenPhone">Continue with phone</button> }
+      </div>
+      @if (phoneStage == 1)
+      {
+        <form id="phone-form" @onsubmit="SendCode" @onsubmit:preventDefault>
+          <label for="phone-number">Phone number, including country code</label>
+          <input id="phone-number" type="tel" @bind="phone" autocomplete="tel" placeholder="+1 555 123 4567" required maxlength="16"/>
+          <p class="auth-note">Google receives and stores your phone number for spam and abuse prevention. Standard message rates may apply.</p>
+          <div id="recaptcha"></div><button disabled="@authBusy" type="submit">Send verification code</button>
+        </form>
+      }
+      @if (phoneStage == 2)
+      {
+        <form id="code-form" @onsubmit="VerifyCode" @onsubmit:preventDefault>
+          <label for="verification-code">Verification code</label><input id="verification-code" @bind="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required/>
+          <button disabled="@authBusy" type="submit">Verify and sign in</button><button disabled="@authBusy" type="button" @onclick="OpenPhone">Use a different number</button>
+        </form>
+      }
+      <p id="auth-status" role="status" aria-live="polite">@authStatus</p>
+      <p class="auth-note">Your tasks, saved to your account and synced across devices.</p>
+    </section>
+  }
+  else
+  {
+    <main class="layout">
+      <section>
+        <div class="eyebrow">@DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant()</div>
+        <h1>Make room for<br/>what matters.</h1><p class="sub">A little clarity for your day. One task at a time.</p>
+        <form class="entry" @onsubmit="AddTask" @onsubmit:preventDefault>
+          <input aria-label="New task" placeholder="What needs to get done?" @bind="newTask" @bind:event="oninput" maxlength="240" required autocomplete="off" disabled="@(!Session.Ready)"/>
+          <select class="category" aria-label="Task category" @bind="category" disabled="@(!Session.Ready)"><option>Personal</option><option>Work</option></select>
+          <button class="add" disabled="@(!Session.Ready)">+ Add task</button>
+        </form>
+        <nav class="tabs" aria-label="Filter tasks">
+          @foreach (var filter in Enum.GetValues<TaskFilter>())
+          { <button type="button" class="@(Session.Filter == filter ? "active" : "")" aria-pressed="@(Session.Filter == filter ? "true" : "false")" @onclick="() => Session.SetFilter(filter)">@(filter == TaskFilter.All ? "All tasks" : filter.ToString())</button> }
+          <span class="count">@Session.Items.Count total</span>
+        </nav>
+        <p class="auth-note" role="status" aria-live="polite">@Session.SyncStatus</p>
+        @if (Session.ImportCount > 0) { <button class="clear" disabled="@(!Session.CanImport)" @onclick="Session.ImportAsync">Import @Session.ImportCount saved tasks from this device</button> }
+        <div id="list">
+          @foreach (var item in Session.Visible)
+          {
+            <div @key="item.Id" class="task @(item.Done ? "done" : "")">
+              <input class="check" type="checkbox" checked="@item.Done" aria-label="@($"Mark {item.Text} {(item.Done ? "active" : "complete")}")" disabled="@(!Session.Ready || Session.IsPending(item.Id))" @onchange="e => Session.ToggleAsync(item, (bool)e.Value!)"/>
+              <div class="tasktext"><div class="title">@item.Text</div><span class="pill">@item.Category</span></div>
+              <button class="delete" aria-label="@($"Delete {item.Text}")" disabled="@(!Session.Ready || Session.IsPending(item.Id))" @onclick="() => Session.DeleteAsync(item)">×</button>
+            </div>
+          }
+          @if (!Session.Visible.Any()) { <div class="empty">@EmptyMessage</div> }
+        </div>
+        <div class="bottom"><span>@Session.Remaining @(Session.Remaining == 1 ? "task" : "tasks") remaining</span>
+          @if (Session.Completed > 0) { <button class="clear" disabled="@(!Session.CanClear)" @onclick="() => Session.ClearAsync()">Clear completed ↗</button> }
+        </div>
+        <p role="status" aria-live="polite" class="task-status">@Session.Message</p>
+      </section>
+      <aside class="aside">
+        <div class="graphic" aria-hidden="true"><div class="orb"></div><div class="orbit"></div><span class="star">✦</span></div>
+        <div class="card"><h2>Your momentum <span style="float:right;color:#d8fa85">↗</span></h2><div class="stat">@Session.Percent% <small>complete</small></div>
+          <div class="bar"><span style="width:@(Session.Percent)%"></span></div>
+          <p>@MomentumMessage</p></div>
+        <p class="quote">“The secret of getting ahead<br/>is getting started.”</p>
+      </aside>
+    </main>
+  }
+  <footer><span>A CLEAR MIND STARTS HERE</span><span>Your tasks, wherever you sign in.</span></footer>
+</div>
+
+@code {
+    private bool initialized, authBusy, disposed;
+    private string authStatus = "Connecting to sign-in…", newTask = "", category = "Personal", phone = "", code = "";
+    private int phoneStage;
+    private string EmptyMessage => !Session.Ready ? "Loading your tasks…" : Session.Filter switch
+    { TaskFilter.Completed => "Your completed tasks will appear here.", TaskFilter.Active => "All clear. Enjoy a little breathing room.", _ => "A fresh start. Add your first task above." };
+    private string MomentumMessage => Session.Items.Count == 0 ? "Your next small step starts here." : $"{Session.Completed} of {Session.Items.Count} tasks complete. " + (Session.Remaining > 0 ? "Small steps. Steady progress." : "Everything done. Take a breath.");
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        Session.Changed += Refresh; Firebase.AccountChanged += AccountChanged;
+        try { await Firebase.InitializeAsync(); initialized = true; authStatus = "Choose a sign-in method to continue."; }
+        catch { authStatus = "Sign-in is unavailable. Check your connection and refresh."; }
+        if (!disposed) StateHasChanged();
+    }
+    private void Refresh() { if (!disposed) _ = InvokeAsync(StateHasChanged); }
+    private async Task AccountChanged(Account? account)
+    {
+        newTask = ""; phone = ""; code = ""; phoneStage = 0; authBusy = false;
+        await Session.SwitchAccountAsync(account); authStatus = "Choose a sign-in method to continue.";
+        Refresh();
+    }
+    private async Task SignIn(string provider)
+    {
+        if (authBusy || !initialized) return;
+        authBusy = true; authStatus = "Opening secure sign-in…";
+        try { var error = await Firebase.SignInAsync(provider); if (error is not null) authStatus = AuthMessages.For(error); }
+        catch { authStatus = "Sign-in couldn’t finish. Please try again."; }
+        finally { authBusy = false; }
+    }
+    private async Task SignOut()
+    {
+        authBusy = true;
+        try { var error = await Firebase.SignOutAsync(); if (error is not null) authStatus = AuthMessages.For(error); }
+        finally { authBusy = false; }
+    }
+    private async Task AddTask()
+    {
+        var text = newTask; var account = Session.User?.Uid; newTask = "";
+        if (!await Session.AddAsync(text, category) && account == Session.User?.Uid && newTask.Length == 0) newTask = text;
+    }
+    private async Task OpenPhone() { await Firebase.ResetPhoneAsync(); phoneStage = 1; code = ""; authStatus = "Enter your phone number to receive a verification code."; }
+    private async Task SendCode()
+    {
+        var normalized = Regex.Replace(phone, @"[\s()-]", "");
+        if (!Regex.IsMatch(normalized, @"^\+[1-9]\d{7,14}$")) { authStatus = "Include your country code, such as +15551234567."; return; }
+        authBusy = true;
+        try { var error = await Firebase.SendCodeAsync(normalized); if (error is null) { phoneStage = 2; authStatus = "Code sent. Enter the six-digit code."; } else authStatus = AuthMessages.For(error); }
+        finally { authBusy = false; }
+    }
+    private async Task VerifyCode()
+    {
+        if (!Regex.IsMatch(code, @"^\d{6}$")) { authStatus = "Enter the six-digit verification code."; return; }
+        authBusy = true;
+        try { var error = await Firebase.VerifyCodeAsync(code); if (error is not null) authStatus = AuthMessages.For(error); }
+        finally { authBusy = false; }
+    }
+    public async ValueTask DisposeAsync() { disposed = true; Session.Changed -= Refresh; Firebase.AccountChanged -= AccountChanged; await Session.DisposeAsync(); }
+}
