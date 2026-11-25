@@ -16,6 +16,8 @@ GitHub Pages uses the GitHub Actions source. `.github/workflows/pages.yml` tests
 
 ## Configuration
 
+Edit `src/Nocturne.Client/wwwroot/randomDescriptionOfTheDay.json` to add or change the daily description below the dashboard heading. It is a JSON array: add each description as a quoted string, separated by commas (no comma after the last entry). Push changes to `main` to publish them. Nocturne makes a random selection seeded by the device's local calendar date, so it stays consistent throughout the day and across devices with the same date. An open app refreshes the description within 30 seconds of a date change. Random choices can repeat on consecutive days. Empty entries are ignored; an empty, invalid, or unavailable file falls back to the original description.
+
 Firebase project: `nocturne-e4a34`. Public web app identifiers are in `src/Nocturne.Client/wwwroot/appsettings.json`. Do not publish service-account or provider private keys.
 
 Google sign-in is configured in `firebase.json`. Deploy authentication configuration with `npx -y firebase-tools@latest deploy --only auth --project nocturne-e4a34 --config firebase.json`. The domain `chrishohl.github.io` remains configured in Firebase Authentication's Authorized domains settings.

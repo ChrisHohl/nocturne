@@ -3,6 +3,7 @@
 @using Nocturne.Client.Services
 @inject FirebaseClient Firebase
 @inject TaskSession Session
+@inject HttpClient Http
 @implements IAsyncDisposable
 
 <div class="shell">
@@ -46,7 +47,7 @@
     <main class="layout">
       <section>
         <div class="eyebrow">@DateTime.Now.ToString("dddd, MMMM d").ToUpperInvariant()</div>
-        <h1>Make room for<br/>what matters.</h1><p class="sub">A little clarity for your day. One task at a time.</p>
+        <h1>Make room for<br/>what matters.</h1><p class="sub">@DailyDescription</p>
         <form class="entry" @onsubmit="AddTask" @onsubmit:preventDefault>
           <input aria-label="New task" placeholder="What needs to get done?" @bind="newTask" @bind:event="oninput" maxlength="240" required autocomplete="off" disabled="@(!Session.Ready)"/>
           <select class="category" aria-label="Task category" @bind="category" disabled="@(!Session.Ready)"><option>Personal</option><option>Work</option></select>
@@ -88,6 +89,45 @@
 </div>
 
 @code {
+    private const string DefaultDescription = "A little clarity for your day. One task at a time.";
+    private string[] descriptions = [DefaultDescription];
+    private readonly CancellationTokenSource descriptionLifetime = new();
+    private Task? descriptionClock;
+    // A date-seeded selection stays the same on refresh and across devices on the same local date.
+    private string DailyDescription => descriptions[new Random(DateOnly.FromDateTime(DateTime.Now).DayNumber).Next(descriptions.Length)];
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var loaded = await Http.GetFromJsonAsync<string?[]>("randomDescriptionOfTheDay.json", descriptionLifetime.Token);
+            var entries = loaded?.Where(text => !string.IsNullOrWhiteSpace(text)).Select(text => text!.Trim()).ToArray();
+            if (entries is { Length: > 0 }) descriptions = entries;
+        }
+        catch (Exception error) when (error is HttpRequestException or System.Text.Json.JsonException or OperationCanceledException)
+        {
+            // Keep the original description if the editable file is unavailable or invalid.
+        }
+        if (!disposed) descriptionClock = RefreshDescriptionAsync();
+    }
+
+    private async Task RefreshDescriptionAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(30));
+        var day = DateOnly.FromDateTime(DateTime.Now);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(descriptionLifetime.Token))
+            {
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                if (today == day) continue;
+                day = today;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
     private bool initialized, authBusy, disposed;
     private string authStatus = "Connecting to sign-in…", newTask = "", category = "Personal", phone = "", code = "";
     private int phoneStage;
@@ -144,5 +184,12 @@
         try { var error = await Firebase.VerifyCodeAsync(code); if (error is not null) authStatus = AuthMessages.For(error); }
         finally { authBusy = false; }
     }
-    public async ValueTask DisposeAsync() { disposed = true; Session.Changed -= Refresh; Firebase.AccountChanged -= AccountChanged; await Session.DisposeAsync(); }
+    public async ValueTask DisposeAsync()
+    {
+        disposed = true;
+        descriptionLifetime.Cancel();
+        if (descriptionClock is not null) await descriptionClock;
+        descriptionLifetime.Dispose();
+        Session.Changed -= Refresh; Firebase.AccountChanged -= AccountChanged; await Session.DisposeAsync();
+    }
 }
