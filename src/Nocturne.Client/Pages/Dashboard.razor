@@ -8,13 +8,14 @@
 
 <div class="shell">
   <header>
-    <div class="brand"><span class="mark">↗</span>nocturne<span style="color:#636963;font-weight:400;margin-left:8px">/ todo</span></div>
+    <div class="brand"><span class="mark">n</span>nocturne<span class="brand-suffix">/ todo</span></div>
     @if (Session.User is null) { <span class="tag">LESS NOISE. MORE FOCUS.</span> }
     else { <div id="account"><span id="account-name">@Session.User.DisplayName</span><button class="clear" disabled="@authBusy" @onclick="SignOut">Sign out</button></div> }
   </header>
   @if (Session.User is null)
   {
     <section class="auth-panel" aria-labelledby="auth-title">
+      <div class="auth-art" aria-hidden="true"><img src="images/glitch-orb.svg" alt="" /></div>
       <div class="eyebrow">YOUR SPACE TO FOCUS</div><h1 id="auth-title">A little clarity.<br/>Just for you.</h1>
       <p class="sub">Sign in to start your day with Nocturne.</p>
       <div class="auth-options">
@@ -72,13 +73,13 @@
           @if (!Session.Visible.Any()) { <div class="empty">@EmptyMessage</div> }
         </div>
         <div class="bottom"><span>@Session.Remaining @(Session.Remaining == 1 ? "task" : "tasks") remaining</span>
-          @if (Session.Completed > 0) { <button class="clear" disabled="@(!Session.CanClear)" @onclick="() => Session.ClearAsync()">Clear completed ↗</button> }
+          @if (Session.Completed > 0) { <button class="clear" disabled="@(!Session.CanClear)" @onclick="() => Session.ClearAsync()">Clear completed</button> }
         </div>
         <p role="status" aria-live="polite" class="task-status">@Session.Message</p>
       </section>
       <aside class="aside">
-        <div class="graphic" aria-hidden="true"><div class="orb"></div><div class="orbit"></div><span class="star">✦</span></div>
-        <div class="card"><h2>Your momentum <span style="float:right;color:#d8fa85">↗</span></h2><div class="stat">@Session.Percent% <small>complete</small></div>
+        <div class="graphic" aria-hidden="true"><img src="images/glitch-orb.svg" alt="" /></div>
+        <div class="card"><h2>Your momentum <span class="signal" aria-hidden="true">✦</span></h2><div class="stat">@Session.Percent% <small>complete</small></div>
           <div class="bar"><span style="width:@(Session.Percent)%"></span></div>
           <p>@MomentumMessage</p></div>
         <p class="quote">“The secret of getting ahead<br/>is getting started.”</p>

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" fill="none">
+  <defs>
+    <g id="shape">
+      <circle cx="240" cy="240" r="146"/>
+      <path d="m64 83 17-17 92 92-17 17zm54-31 10-10 101 101-10 10zm50 29 21-21 72 72-21 21zM45 166l9-9 98 98-9 9zm10 47 13-13 63 63-13 13zm245 100 15-15 103 103-15 15zm38-33 9-9 94 94-9 9zm-79 70 21-21 86 86-21 21zm101 14 16-16 71 71-16 16z"/>
+      <path d="m110 58 9-9 9 9-9 9zm284 361 8-8 8 8-8 8zM82 139l7-7 12 12-7 7z"/>
+    </g>
+    <mask id="cuts"><path fill="white" d="M0 0h480v480H0z"/><path stroke="black" stroke-width="13" d="m134 61 93 93m-7-88 61 61M50 213l81 81m158 50 98 98m-37-154 93 93"/></mask>
+  </defs>
+  <g mask="url(#cuts)">
+    <use href="#shape" fill="#00fff0" transform="translate(-7 3)"/>
+    <use href="#shape" fill="#ff00de" transform="translate(7 -3)"/>
+    <use href="#shape" fill="#0b0636"/>
+  </g>
+  <path stroke="#00fff0" stroke-width="4" d="m126 76 92 92m79 173 91 91"/>
+  <path stroke="#ff00de" stroke-width="4" d="m61 206 81 81m219 7 69 69"/>
+</svg>
