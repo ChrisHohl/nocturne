@@ -1,4 +1,5 @@
-/* Nocturne's static cyan / magenta theme. Decorative glitches never animate. */
+/* Rounded typography and controls over the cyan / magenta theme. */
+@font-face{font-family:Nunito;src:url('../fonts/Nunito.ttf') format('truetype');font-style:normal;font-weight:200 900;font-display:swap}
 :root{color-scheme:dark;--cyan:#00fff0;--pink:#ff35df;--muted:#aaa5c5;--line:#312b51}
 body{background:radial-gradient(ellipse at 85% 15%,#25104a66,transparent 50%),#07051b;color:#f3f2ff;font:16px "Segoe UI",system-ui,sans-serif}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background-image:linear-gradient(#9383ff08 1px,transparent 1px),linear-gradient(90deg,#9383ff08 1px,transparent 1px);background-size:52px 52px;mask-image:linear-gradient(black,transparent 90%)}
@@ -14,3 +15,18 @@ button{transition:background .15s,border-color .15s,box-shadow .15s}button:focus
 @media(max-width:900px){.shell{padding:28px}.layout{grid-template-columns:minmax(0,1fr) 240px;gap:30px;margin-top:42px}.graphic{height:240px}.graphic img{width:275px}.auth-art{right:-20px;top:40px;opacity:.7}.auth-panel>:not(.auth-art){max-width:52%}.entry{flex-wrap:wrap}.entry input{flex-basis:100%}.category,.add{flex:1}}
 @media(max-width:800px){.aside{display:block}.graphic{height:240px}.quote{display:block}}
 @media(max-width:650px){.shell{padding:24px 20px}.layout{grid-template-columns:minmax(0,1fr);gap:24px}.tag,.brand-suffix{display:none}h1{font-size:46px}.aside{display:grid;grid-template-columns:1fr}.graphic,.quote{display:none}.auth-panel{margin-top:28px;padding-top:178px;min-height:0}.auth-panel>:not(.auth-art){max-width:100%}.auth-panel h1{font-size:48px}.auth-art{width:240px;max-width:100%;top:-42px;right:-10px;opacity:1}#account-name{max-width:110px}#account{gap:10px}.count{display:none}footer{margin-top:40px;flex-direction:column;gap:10px;line-height:1.6}}
+
+body{font-family:Nunito,"Segoe UI",system-ui,sans-serif}
+h1{font-weight:700;letter-spacing:-1.8px;line-height:1.12}
+.auth-panel h1{text-shadow:none}
+.brand{font-weight:800}.mark{border-radius:11px;font-style:normal}
+.tag,.eyebrow,.pill,footer{font-family:inherit}
+.eyebrow{font-weight:700;letter-spacing:1.2px}
+.entry{border-radius:18px}.entry:focus-within{box-shadow:0 0 0 3px #00fff012}
+.add,.category,.auth-options button,#phone-form button,#code-form button,#phone-form input,#code-form input{border-radius:12px}
+.add{font-weight:800}.add:hover:not(:disabled){box-shadow:0 4px 16px #00fff024}
+.auth-options button:first-child{box-shadow:0 4px 20px #00fff018}
+.tabs button{border-radius:12px 12px 0 0}.check{border-radius:7px}.pill{border-radius:20px;padding:4px 9px}
+.empty{border-radius:18px}.card{border-radius:22px;box-shadow:0 8px 32px #00000020}
+.stat{font-family:inherit;font-weight:700}.stat small{font-family:inherit}
+.bar,.bar span{border-radius:20px}.quote{border-radius:2px}

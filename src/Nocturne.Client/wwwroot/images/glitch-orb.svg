@@ -1,4 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 480" fill="none">
+  <style>
+    .core{animation:displace 9s step-end infinite}
+    .fragments{opacity:0;animation:fracture 9s step-end infinite}
+    .scan{opacity:0;animation:scan 9s step-end infinite}
+    @keyframes fracture{0%,79%,86%,100%{opacity:0;transform:translate(0,0)}80%,83%{opacity:1;transform:translate(-4px,2px)}81.5%,84.5%{opacity:.7;transform:translate(6px,-2px)}}
+    @keyframes displace{0%,79%,86%,100%{transform:translate(0,0)}80%,83%{transform:translate(5px,-2px)}81.5%,84.5%{transform:translate(-5px,2px)}}
+    @keyframes scan{0%,79%,86%,100%{opacity:0}80%,83%{opacity:.8}81.5%,84.5%{opacity:.3}}
+    @media(prefers-reduced-motion:reduce){.core,.fragments,.scan{animation:none}.fragments,.scan{opacity:0}}
+  </style>
   <defs>
     <g id="shape">
       <circle cx="240" cy="240" r="146"/>
@@ -7,11 +16,19 @@
     </g>
     <mask id="cuts"><path fill="white" d="M0 0h480v480H0z"/><path stroke="black" stroke-width="13" d="m134 61 93 93m-7-88 61 61M50 213l81 81m158 50 98 98m-37-154 93 93"/></mask>
   </defs>
-  <g mask="url(#cuts)">
+  <g class="core">
+    <circle cx="237" cy="242" r="146" fill="#00fff0"/>
+    <circle cx="243" cy="238" r="146" fill="#ff00de"/>
+    <circle cx="240" cy="240" r="146" fill="#0b0636"/>
+    <circle cx="240" cy="240" r="134" stroke="#ada4ff" stroke-opacity=".08"/>
+  </g>
+  <g class="fragments" mask="url(#cuts)">
     <use href="#shape" fill="#00fff0" transform="translate(-7 3)"/>
     <use href="#shape" fill="#ff00de" transform="translate(7 -3)"/>
     <use href="#shape" fill="#0b0636"/>
   </g>
-  <path stroke="#00fff0" stroke-width="4" d="m126 76 92 92m79 173 91 91"/>
-  <path stroke="#ff00de" stroke-width="4" d="m61 206 81 81m219 7 69 69"/>
+  <g class="scan">
+    <path stroke="#00fff0" stroke-width="4" d="m126 76 92 92m79 173 91 91M102 211h95m88 85h92"/>
+    <path stroke="#ff00de" stroke-width="4" d="m61 206 81 81m219 7 69 69M156 171h143m-48 174h102"/>
+  </g>
 </svg>
